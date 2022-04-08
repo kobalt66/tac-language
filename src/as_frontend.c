@@ -13,19 +13,38 @@ char* as_f_compound(AST_T* ast) {
         strcat(value, next_value);
     }
 
+
     return value;
 }
 
 char* as_f_assignment(AST_T* ast) {
-    const char* example = "mov $128, \%eax";
-    char* s = (char*)calloc(strlen(example) + 1, sizeof(char));
-    strcpy(s, example);
+    char* s = calloc(1, sizeof(char));
+
+    if (ast->value->type == AST_FUNCTION) {
+        const char* template = ".global %s\n"
+                               "%s:\n";
+        s = realloc(s, (strlen(template) + (strlen(ast->name) * 2) + 1) * sizeof(char));
+        sprintf(s, template, ast->name, ast->name);
+
+        AST_T* as_val = ast->value;
+
+        char* as_val_val = as_f(as_val->value);
+
+        s = realloc(s, (strlen(s) + strlen(as_val_val) + 1) * sizeof(char));
+        strcat(s, as_val_val);
+    }
 
     return s;
 }
 
 char* as_f_call(AST_T* ast) {
+    char* s = calloc(1, sizeof(char));
 
+    if (strcmp(ast->name, "return")) {
+        
+    }
+
+    return s;
 }
 
 char* as_f_variable(AST_T* ast) {

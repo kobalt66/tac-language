@@ -106,3 +106,4 @@ token_T* lexer_next_token(lexer_T* lexer) {
 
     return init_token(0, TOKEN_EOF);
 }
+    
