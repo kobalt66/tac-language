@@ -21,7 +21,7 @@ char* as_f_assignment(AST_T* ast) {
     char* s = calloc(1, sizeof(char));
 
     if (ast->value->type == AST_FUNCTION) {
-        const char* template = ".global %s\n"
+        const char* template = ".globl %s\n"
                                "%s:\n";
         s = realloc(s, (strlen(template) + (strlen(ast->name) * 2) + 1) * sizeof(char));
         sprintf(s, template, ast->name, ast->name);
@@ -40,8 +40,14 @@ char* as_f_assignment(AST_T* ast) {
 char* as_f_call(AST_T* ast) {
     char* s = calloc(1, sizeof(char));
 
-    if (strcmp(ast->name, "return")) {
-        
+    if (strcmp(ast->name, "return") == 0) {
+        AST_T* first_arg = (AST_T*)ast->value->children->size ? ast->value->children->items[0] : (void*)0;
+        const char* template = "mov $%d, %%eax\n"
+                               "ret\n";
+        char* ret_s = calloc(strlen(template) + 128, sizeof(char));
+        sprintf(ret_s, template, first_arg ? first_arg->int_value : 0);
+        s = realloc(s, (strlen(ret_s) + 1) * sizeof(char));
+        strcat(s, ret_s);
     }
 
     return s;
@@ -55,10 +61,29 @@ char* as_f_int(AST_T* ast) {
 
 }
 
+char* as_f_root(AST_T* ast) {
+    const char* section_text = ".section .text\n"
+                               ".globl _start\n"
+                               "_start:\n"
+                               "call main\n"
+                               "mov \%eax, \%ebx\n"
+                               "mov $1, \%eax\n"
+                               "int $0x80\n\n";
+
+    char* value = (char*)calloc((strlen(section_text) + 128), sizeof(char));
+    strcpy(value, section_text);
+
+    char* next_value = as_f(ast);
+    value = (char*)realloc(value, (strlen(value) + strlen(next_value) + 1) * sizeof(char));
+    strcat(value, next_value);
+
+    return value;
+}
+
 char* as_f(AST_T* ast) {
     char* value = calloc(1, sizeof(char));
     char* next_value = 0;
-    
+
     switch (ast->type) {
         case AST_COMPOUND:      next_value = as_f_compound(ast); break; 
         case AST_ASSIGNMENT:    next_value = as_f_assignment(ast); break;
