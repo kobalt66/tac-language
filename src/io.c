@@ -2,6 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+void tac_write_file(const char* filename, char* outbuffer) {
+    FILE* fp;
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        printf("Could not open file for writing `%s`\n", filename);
+        exit(1);
+    }
+
+    fputs(outbuffer, fp);
+
+    fclose(fp);
+}
 
 char* tac_read_file(const char* filename) {
     FILE* fp;
