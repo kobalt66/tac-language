@@ -38,8 +38,8 @@ void tac_compile(char* src) {
     
     char* s = as_f_root(root);
     tac_write_file("a.s", s);
-    sh("as a.s -o a.o");
-    sh("ld a.o -o a.out");
+    sh("as --32 a.s -o a.o");
+    sh("ld a.o -o a.out -m elf_i386");
 }
 
 void tac_compile_file(const char* filename) {

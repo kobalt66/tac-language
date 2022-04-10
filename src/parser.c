@@ -85,6 +85,10 @@ AST_T* parser_parse_id(parser_T* parser) {
             ast->type = AST_CALL;
             ast->value = parser_parse_list(parser);
         }
+        else if (parser->token->type == TOKEN_LBRACKET) {
+            ast->type = AST_ACCESS;
+            ast->value = parser_parse_list(parser);
+        }
     }
 
     return ast;
@@ -104,16 +108,20 @@ AST_T* parser_parse_block(parser_T* parser) {
 }
 
 AST_T* parser_parse_list(parser_T* parser) {
-    parser_eat(parser, TOKEN_LPAREN);
+    unsigned int is_bracket = parser->token->type == TOKEN_LBRACKET;
+
+    parser_eat(parser, is_bracket ? TOKEN_LBRACKET : TOKEN_LPAREN);
+    
     AST_T* ast = init_ast(AST_COMPOUND);
+    
     list_push(ast->children, parser_parse_expr(parser));
 
     while (parser->token->type == TOKEN_COMMA) {
         parser_eat(parser, TOKEN_COMMA);
-        list_push(ast->children, parser_parse_expr(parser));
+        list_push(ast->children, parser_parse_expr(parser)  );
     }
 
-    parser_eat(parser, TOKEN_RPAREN);
+    parser_eat(parser, is_bracket ? TOKEN_RBRACKET : TOKEN_RPAREN);
 
     if (parser->token->type == TOKEN_COLON) {
         parser_eat(parser, TOKEN_COLON);
