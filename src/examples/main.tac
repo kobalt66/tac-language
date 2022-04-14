@@ -1,3 +1,3 @@
 main = (argc: int, argv: Array<string>): int => {
-    return(argc);   
+    return(argv[0]);   
 }

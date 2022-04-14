@@ -36,7 +36,7 @@ void tac_compile(char* src) {
     parser_T* parser = init_parser(lexer);
     AST_T* root = parser_parse(parser);
     
-    char* s = as_f_root(root);
+    char* s = as_f_root(root, init_list(sizeof(struct AST_STRUCT*)));
     tac_write_file("a.s", s);
     sh("as --32 a.s -o a.o");
     sh("ld a.o -o a.out -m elf_i386");
