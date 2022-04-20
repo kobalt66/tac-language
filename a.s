@@ -12,8 +12,12 @@ int $0x80
 main:
 pushl %ebp
 movl %esp, %ebp
-movl 4(%esp), %eax
-movl 0(%eax), %eax
+movl $4, %eax
+movl $1, %ebx
+movl $0, %ecx
+movl $0, %edx
+int $0x80
+movl $18, %eax
 
 movl %ebp, %esp
 popl %ebp

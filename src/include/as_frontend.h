@@ -11,5 +11,6 @@ char* as_f_assignment(AST_T* ast, list_T* list);
 char* as_f_call(AST_T* ast, list_T* list);
 char* as_f_variable(AST_T* ast, list_T* list);
 char* as_f_int(AST_T* ast, list_T* list);
+char* as_f_string(AST_T* ast, list_T* list);
 
 #endif

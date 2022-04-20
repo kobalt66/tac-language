@@ -93,6 +93,8 @@ char* as_f_call(AST_T* ast, list_T* list) {
 char* as_f_variable(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
 
+    return s;
+
     AST_T* var = var_lookup(list, ast->name);
 
     if (!var) {
@@ -108,7 +110,15 @@ char* as_f_variable(AST_T* ast, list_T* list) {
 }
 
 char* as_f_int(AST_T* ast, list_T* list) {
+    const char* template = "$%d";
+    char* s = calloc(strlen(template) + 128, sizeof(char));
+    sprintf(s, template, ast->int_value);
 
+    return s;
+}
+
+char* as_f_string(AST_T* ast, list_T* list) {
+    return ast->string_value;
 }
 
 char* as_f_access(AST_T* ast, list_T* list) {
@@ -152,12 +162,14 @@ char* as_f(AST_T* ast, list_T* list) {
     char* value = calloc(1, sizeof(char));
     char* next_value = 0;
 
+
     switch (ast->type) {
         case AST_COMPOUND:      next_value = as_f_compound(ast, list); break; 
         case AST_ASSIGNMENT:    next_value = as_f_assignment(ast, list); break;
         case AST_VARIABLE:      next_value = as_f_variable(ast, list); break;
         case AST_CALL:          next_value = as_f_call(ast, list); break;
         case AST_INT:           next_value = as_f_int(ast, list); break;
+        case AST_STRING:        next_value = as_f_string(ast, list); break;
         case AST_ACCESS:        next_value = as_f_access(ast, list); break;
         default: { printf("[ASM Frontend]: No frontend for AST of type `%d`\n", ast->type); exit(1); } break;
     }
