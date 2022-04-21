@@ -1,3 +1,4 @@
 main = (argc: int, argv: Array<string>): int => {
-    return(argc);   
+    print(18);
+    return(18);   
 }
