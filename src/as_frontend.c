@@ -23,7 +23,7 @@ char* as_f_compound(AST_T* ast, list_T* list) {
     for (int i = 0; i < ast->children->size; i++) {
         AST_T* child_ast = (AST_T*)ast->children->items[i];
         char* next_value = as_f(child_ast, list);
-        value = realloc(value, (strlen(next_value) + 1) * sizeof(char));
+        value = realloc(value, (strlen(value) + strlen(next_value) + 1) * sizeof(char));
         strcat(value, next_value);
     }
 
