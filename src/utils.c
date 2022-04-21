@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char* mkstr(const char* str) {
+    char* outstr = (char*)calloc(strlen(str) + 1, sizeof(char));
+    strcpy(outstr, str);
+
+    return outstr;
+}
+
 char* str_to_hex(const char* instr) {
     unsigned int len = strlen(instr);
     char* hexstr = calloc(1, sizeof(char));
@@ -16,4 +23,24 @@ char* str_to_hex(const char* instr) {
     }
 
     return hexstr;
+}
+
+char** str_to_hex_chunks(const char* instr, int* nr_chunks) {
+    unsigned int len = strlen(instr);
+    unsigned int nrchunks = (len / 4) + 1;
+    int* nrptr = nr_chunks;
+    *nrptr = nrchunks;
+
+    char** strlist = calloc(nrchunks * 4, sizeof(char));
+
+    for (unsigned int i = 0; i < (len / 4) + 1; i++) {
+        char* chunkstr = mkstr(instr + i * 4);
+        chunkstr = realloc(chunkstr, 4);
+        chunkstr[4] = 0;
+        char* hexstr = str_to_hex(chunkstr);
+
+        strlist[i] = hexstr;
+    }
+
+    return strlist;
 }
