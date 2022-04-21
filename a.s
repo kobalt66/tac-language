@@ -14,8 +14,9 @@ pushl %ebp
 movl %esp, %ebp
 movl $4, %eax
 movl $1, %ebx
-movl $0, %ecx
-movl $0, %edx
+pushl $0x033333231
+movl %esp, %ecx
+movl $8, %edx
 int $0x80
 movl $18, %eax
 

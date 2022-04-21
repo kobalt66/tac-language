@@ -1,4 +1,5 @@
 #include "include/builtins.h"
+#include "include/utils.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -12,13 +13,27 @@ static char* mkstr(const char* str) {
 AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
     AST_T* ast = init_ast(AST_STRING);
 
-    const char* template = "movl $4, \%eax\n" // syscall write
-                           "movl $1, \%ebx\n" // stdout
-                           "movl $0, \%ecx\n" // buffer
-                           "movl $0, \%edx\n" // size
+    AST_T* first_arg = list->size ? (AST_T*)list->items[0] : (AST_T*)0;
+    char* instr = calloc(128, sizeof(char));
+    char* hexstr = 0;
+
+    if (first_arg) {
+        sprintf(instr, "%d", first_arg->int_value);
+        hexstr = str_to_hex(instr);
+    }
+
+    const char* template = "movl $4, %%eax\n" // syscall write
+                           "movl $1, %%ebx\n" // stdout
+                           "pushl $0x%s\n"      // buffer
+                           "movl %%esp, %%ecx\n" // buffer
+                           "movl $%d, %%edx\n" // size
                            "int $0x80\n";
 
-    ast->string_value = mkstr(template);
+    char* asmb = calloc((hexstr ? strlen(hexstr) : 0) + strlen(template) + 1, sizeof(char));
+    sprintf(asmb, template, hexstr ? hexstr : "$0", 8);
+    ast->string_value = asmb;
+    free(hexstr);
+
     return ast;
 }
 
