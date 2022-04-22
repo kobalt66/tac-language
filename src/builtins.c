@@ -10,7 +10,7 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
     AST_T* first_arg = list->size ? (AST_T*)list->items[0] : (AST_T*)0;
     char* instr = 0;
     char* hexstr = 0;
-    int nr_chunks = 0;
+    unsigned int nr_chunks = 0;
 
     if (first_arg) {
         if (first_arg->type == AST_STRING)
@@ -20,13 +20,14 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
             sprintf(instr, "%d", first_arg->int_value);
         }
 
-        char** chunks = str_to_hex_chunks(instr, &nr_chunks);
+        list_T* chunks = str_to_hex_chunks(instr);
+        nr_chunks = chunks->size;
         
         char* strpush = calloc(1, sizeof(char));
         const char* pushtemplate = "pushl $0x%s\n";
 
-        for (int i = 0; i < nr_chunks; i++) {
-            char* pushhex = chunks[(nr_chunks - i) -1];
+        for (unsigned int i = 0; i < nr_chunks; i++) {
+            char* pushhex = (char*)chunks->items[(nr_chunks - i) - 1];
             char* push = calloc(strlen(pushhex) + strlen(pushtemplate) + 1, sizeof(char));
             sprintf(push, pushtemplate, pushhex);
             strpush = realloc(strpush, (strlen(strpush) + strlen(push) + 1) * sizeof(char));

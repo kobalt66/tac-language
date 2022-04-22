@@ -14,19 +14,33 @@ pushl %ebp
 movl %esp, %ebp
 movl $4, %eax
 movl $1, %ebx
-pushl $0x0ad65
-pushl $0x067617567
-pushl $0x06e616c20
-pushl $0x063617420
-pushl $0x065687420
-pushl $0x073692073
-pushl $0x069687420
-pushl $0x02c646c72
-pushl $0x06f77206f
-pushl $0x06c6c6568
+pushl $0x0a3234
+pushl $0x09
+pushl $0x03a646c72
+pushl $0x06f572020
+pushl $0x020
+pushl $0x0a3032
+pushl $0x093a6f6c
+pushl $0x06c654820
+pushl $0x02e31
 movl %esp, %ecx
-addl $78, %esp
-movl $40, %edx
+addl $52, %esp
+movl $36, %edx
+int $0x80
+movl $4, %eax
+movl $1, %ebx
+pushl $0x0a3234
+pushl $0x09
+pushl $0x03a646c72
+pushl $0x06f572020
+pushl $0x020
+pushl $0x0a3032
+pushl $0x093a6f6c
+pushl $0x06c654820
+pushl $0x02e32
+movl %esp, %ecx
+addl $52, %esp
+movl $36, %edx
 int $0x80
 movl $18, %eax
 
