@@ -1,5 +1,6 @@
 #include "include/builtins.h"
 #include "include/utils.h"
+#include "include/as_frontend.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -8,45 +9,56 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
     AST_T* ast = init_ast(AST_STRING);
 
     AST_T* first_arg = list->size ? (AST_T*)list->items[0] : (AST_T*)0;
-    char* instr = 0;
+    char* instr = first_arg ? first_arg->string_value : 0;
     char* hexstr = 0;
     unsigned int nr_chunks = 0;
 
     if (first_arg) {
-        if (first_arg->type == AST_STRING)
-            instr = first_arg->string_value;
-        else if (first_arg->type == AST_INT) {
+        if (first_arg->type == AST_INT) {
             instr = calloc(128, sizeof(char));
             sprintf(instr, "%d", first_arg->int_value);
         }
-
-        list_T* chunks = str_to_hex_chunks(instr);
-        nr_chunks = chunks->size;
-        
-        char* strpush = calloc(1, sizeof(char));
-        const char* pushtemplate = "pushl $0x%s\n";
-
-        for (unsigned int i = 0; i < nr_chunks; i++) {
-            char* pushhex = (char*)chunks->items[(nr_chunks - i) - 1];
-            char* push = calloc(strlen(pushhex) + strlen(pushtemplate) + 1, sizeof(char));
-            sprintf(push, pushtemplate, pushhex);
-            strpush = realloc(strpush, (strlen(strpush) + strlen(push) + 1) * sizeof(char));
-            strcat(strpush, push);
+        else if (first_arg->type == AST_ACCESS) {
+            char* pushstr = as_f(first_arg, list);
+            hexstr = pushstr;
         }
+        else if (first_arg->type == AST_VARIABLE) {
+            return first_arg;
+        }
+        else {
+            list_T* chunks = str_to_hex_chunks(instr);
+            nr_chunks = chunks->size;
+            
+            char* strpush = calloc(1, sizeof(char));
+            const char* pushtemplate = "pushl $0x%s\n";
 
-        hexstr = strpush;
+            for (unsigned int i = 0; i < nr_chunks; i++) {
+                char* pushhex = (char*)chunks->items[(nr_chunks - i) - 1];
+                char* push = calloc(strlen(pushhex) + strlen(pushtemplate) + 1, sizeof(char));
+                sprintf(push, pushtemplate, pushhex);
+                strpush = realloc(strpush, (strlen(strpush) + strlen(push) + 1) * sizeof(char));
+                strcat(strpush, push);
+                free(pushhex);
+                free(push);
+            }
+
+            hexstr = strpush;
+        }
     }
 
-    const char* template = "movl $4, %%eax\n" // syscall write
-                           "movl $1, %%ebx\n" // stdout
-                           "%s"               // buffer
+    const char* template = "\n# Print Method\n"
+                           "movl $4, %%eax\n" // syscall write
+                           "movl $1, %%ebx\n\n" // stdout
+                           "%s\n"               // buffer
                            "movl %%esp, %%ecx\n" // buffer
                            "addl $%d, %%esp\n"
                            "movl $%d, %%edx\n" // size
                            "int $0x80\n";
 
+    unsigned int nr_bytes = nr_chunks * 4;
+
     char* asmb = calloc((hexstr ? strlen(hexstr) : 0) + strlen(template) + 1, sizeof(char));
-    sprintf(asmb, template, hexstr ? hexstr : "$0", strlen(instr) * 2, nr_chunks * 4);
+    sprintf(asmb, template, hexstr ? hexstr : "$0", nr_bytes, nr_bytes);
     ast->string_value = asmb;
     free(hexstr);
 

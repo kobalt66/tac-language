@@ -93,8 +93,6 @@ char* as_f_call(AST_T* ast, list_T* list) {
 char* as_f_variable(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
 
-    return s;
-
     AST_T* var = var_lookup(list, ast->name);
 
     if (!var) {
@@ -122,17 +120,13 @@ char* as_f_string(AST_T* ast, list_T* list) {
 }
 
 char* as_f_access(AST_T* ast, list_T* list) {
-    AST_T* left = var_lookup(list, ast->name);
-    char* left_as = as_f(left, list);
-    AST_T* first_arg = (AST_T*)ast->value->children->size ? ast->value->children->items[0] : (void*)0;
+    int stackpos = ast->id;
 
-    const char* template = "%s, %%eax\n"
-                           "movl %d(%%eax)";
+    const char* template = "# Access\n"
+                           "pushl %d(%%esp)\n";
 
-    char* s = calloc(strlen(template) + strlen(left_as) + 128, sizeof(char));
-    sprintf(s, template, left_as, (first_arg ? first_arg->int_value : 0) * 4);
-
-    free(left_as);
+    char* s = calloc(strlen(template) + 128, sizeof(char));
+    sprintf(s, template, stackpos * 4);
 
     return s;
 }

@@ -26,6 +26,7 @@ typedef struct AST_STRUCT {
     struct AST_STRUCT* value;
     int int_value;
     int data_type;
+    int id;
     struct AST_STRUCT* (*fptr)(struct VISITOR_STRUCT* visitor, struct AST_STRUCT* node, list_T* list);
 } AST_T;
 

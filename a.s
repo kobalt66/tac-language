@@ -12,37 +12,33 @@ int $0x80
 main:
 pushl %ebp
 movl %esp, %ebp
+
+# Print Method
 movl $4, %eax
 movl $1, %ebx
-pushl $0x0a3234
-pushl $0x09
-pushl $0x03a646c72
-pushl $0x06f572020
-pushl $0x020
-pushl $0x0a3032
-pushl $0x093a6f6c
-pushl $0x06c654820
-pushl $0x02e31
+
+# Access
+pushl 4(%esp)
+
 movl %esp, %ecx
-addl $52, %esp
-movl $36, %edx
+addl $0, %esp
+movl $0, %edx
 int $0x80
+
+# Print Method
 movl $4, %eax
 movl $1, %ebx
-pushl $0x0a3234
-pushl $0x09
-pushl $0x03a646c72
-pushl $0x06f572020
-pushl $0x020
-pushl $0x0a3032
-pushl $0x093a6f6c
-pushl $0x06c654820
-pushl $0x02e32
+
+pushl $0x0a65
+pushl $0x072656874
+pushl $0x0206f6c6c
+pushl $0x06548
+
 movl %esp, %ecx
-addl $52, %esp
-movl $36, %edx
+addl $16, %esp
+movl $16, %edx
 int $0x80
-movl $18, %eax
+movl 8(%esp), %eax
 
 movl %ebp, %esp
 popl %ebp
