@@ -21,6 +21,12 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
         else if (first_arg->type == AST_ACCESS) {
             char* pushstr = as_f(first_arg, list);
             hexstr = pushstr;
+
+            const char* strlenas = "call strlen\n"
+                                   "addl $4, %esp\n";
+
+            hexstr = realloc(hexstr, (strlen(hexstr) + strlen(strlenas) + 1 * sizeof(char)));
+            strcat(hexstr, strlenas);
         }
         else if (first_arg->type == AST_VARIABLE) {
             return first_arg;
@@ -46,19 +52,31 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
         }
     }
 
+    unsigned int nr_bytes = nr_chunks * 4;
+    char* sizeasstr = (char*)calloc(1, sizeof(char));
+
+    if (nr_bytes) {
+        const char* size_template = "movl $%d, %%edx\n";
+        sizeasstr = realloc(sizeasstr, (strlen(size_template) + 128) * sizeof(char));
+        sprintf(sizeasstr, size_template, nr_bytes);
+    }
+    else {
+        const char* size_template = "movl %eax, %edx\n";
+        sizeasstr = realloc(sizeasstr, (strlen(size_template) + 128) * sizeof(char));
+        strcpy(sizeasstr, size_template);
+    }
+
     const char* template = "\n# Print Method\n"
-                           "movl $4, %%eax\n" // syscall write
                            "movl $1, %%ebx\n\n" // stdout
                            "%s\n"               // buffer
                            "movl %%esp, %%ecx\n" // buffer
                            "addl $%d, %%esp\n"
-                           "movl $%d, %%edx\n" // size
+                           "%s\n" // size
+                           "movl $4, %%eax\n" // syscall write
                            "int $0x80\n";
 
-    unsigned int nr_bytes = nr_chunks * 4;
-
-    char* asmb = calloc((hexstr ? strlen(hexstr) : 0) + strlen(template) + 1, sizeof(char));
-    sprintf(asmb, template, hexstr ? hexstr : "$0", nr_bytes, nr_bytes);
+    char* asmb = calloc((hexstr ? strlen(hexstr) : 0) + strlen(template) + sizeof(sizeasstr) + 1, sizeof(char));
+    sprintf(asmb, template, hexstr ? hexstr : "$0", nr_bytes, sizeasstr);
     ast->string_value = asmb;
     free(hexstr);
 

@@ -3,6 +3,28 @@
 #include <string.h>
 #include <stdio.h>
 
+const char STRLEN_TEMPLATE[] =
+"\n.type strlen, @function\n"
+"strlen:\n"
+"  pushl %ebp\n"
+"  movl %esp, %ebp\n"
+"  movl $0, %edi\n"
+"  movl 4(%esp), %eax\n"
+"  jmp strlenloop\n"
+"\n"
+"strlenloop:\n"
+"  movb (%eax, %edi, 1), %cl\n"
+"  cmpb $0, %cl\n"
+"  je strlenend\n"
+"  addl $1, %edi\n"
+"  jmp strlenloop\n"
+"\n"
+"strlenend:\n"
+"  movl %edi, %eax\n"
+"  movl %ebp, %esp\n"
+"  popl %ebp\n"
+"  ret\n";
+
 static AST_T* var_lookup(list_T* list, const char* name) {
     for (int i = 0; i < list->size; i++) {
         AST_T* child_ast = (AST_T*)list->items[i];
@@ -121,12 +143,16 @@ char* as_f_string(AST_T* ast, list_T* list) {
 
 char* as_f_access(AST_T* ast, list_T* list) {
     int stackpos = ast->id;
+    int offset = ast->int_value;
 
     const char* template = "# Access\n"
-                           "pushl %d(%%esp)\n";
+                           "movl %d(%%esp), %%esp\n"
+                           "movl %d(%%esp), %%esp\n"
+                           "pushl (%%esp)\n";
 
+    int pos = stackpos * 8;
     char* s = calloc(strlen(template) + 128, sizeof(char));
-    sprintf(s, template, stackpos * 4);
+    sprintf(s, template, pos, offset, pos);
 
     return s;
 }
@@ -135,6 +161,7 @@ char* as_f_root(AST_T* ast, list_T* list) {
     const char* section_text = ".section .text\n"
                                ".globl _start\n"
                                "_start:\n"
+                               "pushl 4(\%esp)\n"
                                "pushl 0(\%esp)\n"
                                "call main\n"
                                "addl $4, \%esp\n"
@@ -148,6 +175,9 @@ char* as_f_root(AST_T* ast, list_T* list) {
     char* next_value = as_f(ast, list);
     value = (char*)realloc(value, (strlen(value) + strlen(next_value) + 1) * sizeof(char));
     strcat(value, next_value);
+
+    value = realloc(value, (strlen(value) + strlen(STRLEN_TEMPLATE) + 1) * sizeof(char));
+    strcat(value, STRLEN_TEMPLATE);
 
     return value;
 }
