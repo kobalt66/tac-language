@@ -9,7 +9,7 @@ const char STRLEN_TEMPLATE[] =
 "  pushl %ebp\n"
 "  movl %esp, %ebp\n"
 "  movl $0, %edi\n"
-"  movl 4(%esp), %eax\n"
+"  movl 8(%esp), %eax\n"
 "  jmp strlenloop\n"
 "\n"
 "strlenloop:\n"
@@ -99,10 +99,13 @@ char* as_f_call(AST_T* ast, list_T* list) {
             free(as_var_s);
         }
 
-        const char* template = "movl %s, %%eax\n\n"
+        const char* template = "\n# Call\n"
+                               "%s\n"
+                               "popl %%eax\n"
                                "movl %%ebp, %%esp\n"
                                "popl %%ebp\n"
                                "ret\n";
+
         char* ret_s = calloc(strlen(template) + 128, sizeof(char));
         sprintf(ret_s, template, var_s);
         s = realloc(s, (strlen(ret_s) + 1) * sizeof(char));
@@ -122,7 +125,7 @@ char* as_f_variable(AST_T* ast, list_T* list) {
         exit(1);
     }
 
-    const char* template = "%d(%%esp)";
+    const char* template = "pushl %d(%%esp)\n";
     s = realloc(s, (strlen(template) + 8) * sizeof(char));
     sprintf(s, template, var->int_value);
     
@@ -130,7 +133,7 @@ char* as_f_variable(AST_T* ast, list_T* list) {
 }
 
 char* as_f_int(AST_T* ast, list_T* list) {
-    const char* template = "$%d";
+    const char* template = "pushl $%d\n";
     char* s = calloc(strlen(template) + 128, sizeof(char));
     sprintf(s, template, ast->int_value);
 
@@ -142,17 +145,13 @@ char* as_f_string(AST_T* ast, list_T* list) {
 }
 
 char* as_f_access(AST_T* ast, list_T* list) {
-    int stackpos = ast->id;
-    int offset = ast->int_value;
+    int offset = 12 + ast->int_value * 4;
 
     const char* template = "# Access\n"
-                           "movl %d(%%esp), %%esp\n"
-                           "movl %d(%%esp), %%esp\n"
-                           "pushl (%%esp)\n";
+                           "pushl %d(%%ebp)\n";
 
-    int pos = stackpos * 8;
     char* s = calloc(strlen(template) + 128, sizeof(char));
-    sprintf(s, template, pos, offset, pos);
+    sprintf(s, template, offset);
 
     return s;
 }
@@ -161,10 +160,8 @@ char* as_f_root(AST_T* ast, list_T* list) {
     const char* section_text = ".section .text\n"
                                ".globl _start\n"
                                "_start:\n"
-                               "pushl 4(\%esp)\n"
-                               "pushl 0(\%esp)\n"
+                               "movl \%esp, \%ebp\n"
                                "call main\n"
-                               "addl $4, \%esp\n"
                                "movl \%eax, \%ebx\n"
                                "movl $1, \%eax\n"
                                "int $0x80\n\n";

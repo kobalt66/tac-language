@@ -12,26 +12,30 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
     char* instr = first_arg ? first_arg->string_value : 0;
     char* hexstr = 0;
     unsigned int nr_chunks = 0;
+    unsigned int nr_bytes = 0;
 
     if (first_arg) {
         if (first_arg->type == AST_INT) {
-            instr = calloc(128, sizeof(char));
-            sprintf(instr, "%d", first_arg->int_value);
+            char* intstr = calloc(128, sizeof(char));
+            sprintf(intstr, "%d", first_arg->int_value);
+            instr = intstr;
         }
         else if (first_arg->type == AST_ACCESS) {
             char* pushstr = as_f(first_arg, list);
             hexstr = pushstr;
 
             const char* strlenas = "call strlen\n"
-                                   "addl $4, %esp\n";
+                                   "popl \%esp\n";
 
             hexstr = realloc(hexstr, (strlen(hexstr) + strlen(strlenas) + 1 * sizeof(char)));
             strcat(hexstr, strlenas);
         }
         else if (first_arg->type == AST_VARIABLE) {
-            return first_arg;
+            char* pushstr = as_f(first_arg, list);
+            hexstr = pushstr;
         }
-        else {
+        
+        if (instr) {
             list_T* chunks = str_to_hex_chunks(instr);
             nr_chunks = chunks->size;
             
@@ -52,7 +56,7 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
         }
     }
 
-    unsigned int nr_bytes = nr_chunks * 4;
+    nr_bytes = nr_bytes > 0 ? nr_bytes : nr_chunks * 4;
     char* sizeasstr = (char*)calloc(1, sizeof(char));
 
     if (nr_bytes) {
@@ -67,12 +71,12 @@ AST_T* fptr_print(visitor_T* visitor, AST_T* node, list_T* list) {
     }
 
     const char* template = "\n# Print Method\n"
-                           "movl $1, %%ebx\n\n" // stdout
                            "%s\n"               // buffer
                            "movl %%esp, %%ecx\n" // buffer
                            "addl $%d, %%esp\n"
                            "%s\n" // size
                            "movl $4, %%eax\n" // syscall write
+                           "movl $1, %%ebx\n\n" // stdout
                            "int $0x80\n";
 
     char* asmb = calloc((hexstr ? strlen(hexstr) : 0) + strlen(template) + sizeof(sizeasstr) + 1, sizeof(char));

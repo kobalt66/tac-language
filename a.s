@@ -1,10 +1,8 @@
 .section .text
 .globl _start
 _start:
-pushl 4(%esp)
-pushl 0(%esp)
+movl %esp, %ebp
 call main
-addl $4, %esp
 movl %eax, %ebx
 movl $1, %eax
 int $0x80
@@ -15,38 +13,99 @@ pushl %ebp
 movl %esp, %ebp
 
 # Print Method
+pushl $0x0a646c72
+pushl $0x06f77206f
+pushl $0x06c6c6568
+
+movl %esp, %ecx
+addl $12, %esp
+movl $12, %edx
+
+movl $4, %eax
 movl $1, %ebx
 
-# Access
-movl 8(%esp), %esp
-movl 1(%esp), %esp
-pushl (%esp)
-call strlen
+int $0x80
+
+# Print Method
+pushl $0x03533
+pushl $0x032333231
+
+movl %esp, %ecx
+addl $8, %esp
+movl $8, %edx
+
+movl $4, %eax
+movl $1, %ebx
+
+int $0x80
+
+# Print Method
+pushl $0x0a
+
+movl %esp, %ecx
 addl $4, %esp
+movl $4, %edx
+
+movl $4, %eax
+movl $1, %ebx
+
+int $0x80
+
+# Print Method
+# Access
+pushl 12(%ebp)
+call strlen
+popl %esp
 
 movl %esp, %ecx
 addl $0, %esp
 movl %eax, %edx
 
 movl $4, %eax
+movl $1, %ebx
+
 int $0x80
 
 # Print Method
-movl $1, %ebx
-
-pushl $0x0a65
-pushl $0x072656874
-pushl $0x0206f6c6c
-pushl $0x06548
+pushl $0x0a
 
 movl %esp, %ecx
-addl $16, %esp
-movl $16, %edx
+addl $4, %esp
+movl $4, %edx
 
 movl $4, %eax
-int $0x80
-movl 8(%esp), %eax
+movl $1, %ebx
 
+int $0x80
+
+# Print Method
+pushl 0(%esp)
+
+movl %esp, %ecx
+addl $0, %esp
+movl %eax, %edx
+
+movl $4, %eax
+movl $1, %ebx
+
+int $0x80
+
+# Print Method
+pushl $0x0a
+
+movl %esp, %ecx
+addl $4, %esp
+movl $4, %edx
+
+movl $4, %eax
+movl $1, %ebx
+
+int $0x80
+
+# Call
+pushl 8(%esp)
+
+popl %eax
 movl %ebp, %esp
 popl %ebp
 ret
@@ -56,7 +115,7 @@ strlen:
   pushl %ebp
   movl %esp, %ebp
   movl $0, %edi
-  movl 4(%esp), %eax
+  movl 8(%esp), %eax
   jmp strlenloop
 
 strlenloop:
