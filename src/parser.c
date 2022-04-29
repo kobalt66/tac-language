@@ -118,11 +118,13 @@ AST_T* parser_parse_list(parser_T* parser) {
     
     AST_T* ast = init_ast(AST_COMPOUND);
     
-    list_push(ast->children, parser_parse_expr(parser));
-
-    while (parser->token->type == TOKEN_COMMA) {
-        parser_eat(parser, TOKEN_COMMA);
-        list_push(ast->children, parser_parse_expr(parser)  );
+    if (parser->token->type != (is_bracket ? TOKEN_RBRACKET : TOKEN_RPAREN)) {
+        list_push(ast->children, parser_parse_expr(parser));
+        
+        while (parser->token->type == TOKEN_COMMA) {
+            parser_eat(parser, TOKEN_COMMA);
+            list_push(ast->children, parser_parse_expr(parser));
+        }
     }
 
     parser_eat(parser, is_bracket ? TOKEN_RBRACKET : TOKEN_RPAREN);

@@ -110,6 +110,17 @@ char* as_f_call(AST_T* ast, list_T* list) {
         sprintf(ret_s, template, var_s);
         s = realloc(s, (strlen(ret_s) + 1) * sizeof(char));
         strcat(s, ret_s);
+        free(ret_s);
+    }
+    else {
+        const char* template = "\n# Call\n"
+                               "call %s\n";
+
+        char* ret_s = calloc(strlen(template) + 128, sizeof(char));
+        sprintf(ret_s, template, ast->name);
+        s = realloc(s, (strlen(ret_s) + 1) * sizeof(char));
+        strcat(s, ret_s);
+        free(ret_s);
     }
 
     return s;

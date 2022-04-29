@@ -1,10 +1,9 @@
+something = () : int => {
+    print("Calling something!\n");
+    return(1);
+};
+
 main = (argc: int, argv: Array<string>): int => {
-    print("hello world\n");
-    print(123235);
-    print("\n");
-    print(argv[0]);
-    print("\n");
-    print(argc);
-    print("\n");
+    something();
     return(argc);
-}
+};
