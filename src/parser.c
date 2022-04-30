@@ -27,6 +27,15 @@ AST_T* parser_parse(parser_T* parser) {
     return parser_parse_compound(parser);
 }
 
+AST_T* parser_parse_statement(parser_T* parser) {
+    // we only have return statements right now
+    AST_T* ast = init_ast(AST_STATEMENT_RETURN);
+    parser_eat(parser, TOKEN_STATEMENT);
+    ast->value = parser_parse_expr(parser);
+
+    return ast;
+}
+
 AST_T* parser_parse_compound(parser_T* parser) {
     AST_T* compound = init_ast(AST_COMPOUND);
     
@@ -37,7 +46,10 @@ AST_T* parser_parse_compound(parser_T* parser) {
     }
 
     while (parser->token->type != TOKEN_EOF && parser->token->type != TOKEN_RBRACE) {
-        list_push(compound->children, parser_parse_expr(parser));
+        if (parser->token->type == TOKEN_STATEMENT)
+            list_push(compound->children, parser_parse_statement(parser));
+        else
+            list_push(compound->children, parser_parse_expr(parser));
 
         if (parser->token->type == TOKEN_SEMI)
             parser_eat(parser, TOKEN_SEMI);

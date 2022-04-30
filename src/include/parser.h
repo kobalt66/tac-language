@@ -24,6 +24,8 @@ AST_T* parser_parse_block(parser_T* parser);
 
 AST_T* parser_parse_int(parser_T* parser);
 
+AST_T* parser_parse_statement(parser_T* parser);
+
 AST_T* parser_parse_string(parser_T* parser);
 
 AST_T* parser_parse_expr(parser_T* parser);

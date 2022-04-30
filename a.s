@@ -28,13 +28,10 @@ movl $1, %ebx
 
 int $0x80
 
-# Call
+# Return statement
 pushl $1
+jmp return_statement
 
-popl %eax
-movl %ebp, %esp
-popl %ebp
-ret
 .globl main
 main:
 pushl %ebp
@@ -43,9 +40,11 @@ movl %esp, %ebp
 # Call
 call something
 
-# Call
-pushl 8(%esp)
+# Return statement
+pushl $16
+jmp return_statement
 
+return_statement:
 popl %eax
 movl %ebp, %esp
 popl %ebp
