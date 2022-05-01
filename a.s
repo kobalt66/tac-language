@@ -7,48 +7,55 @@ movl %eax, %ebx
 movl $1, %eax
 int $0x80
 
-.globl something
-something:
-pushl %ebp
-movl %esp, %ebp
-
-# Print Method
-pushl $0x0a2167
-pushl $0x06e696874
-pushl $0x0656d6f73
-pushl $0x020676e69
-pushl $0x06c6c6143
-
-movl %esp, %ecx
-addl $20, %esp
-movl $20, %edx
-
-movl $4, %eax
-movl $1, %ebx
-
-int $0x80
-
-# Return statement
-pushl $1
-jmp return_statement
-
 .globl main
 main:
 pushl %ebp
 movl %esp, %ebp
+pushl $0x0a
+pushl $0x021646c72
+pushl $0x06f57206f
+pushl $0x06c6c6548
+push %esp
+pushl $16
 
 # Call
-call something
+call print
+# Access
+pushl 16(%ebp)
+call strlen
+pushl %eax
+
+# Call
+call print
+pushl $0x0a
+push %esp
+pushl $4
+
+# Call
+call print
 
 # Return statement
-pushl $16
+pushl $0
 jmp return_statement
 
+print:
+   pushl %ebp
+   movl %esp, %ebp
+   movl 12(%esp), %ecx
+   movl 8(%esp), %edx
+   movl $4, %eax
+   movl $1, %ebx
+
+   movl %ebp, %esp
+   popl %ebp
+   int $0x80
+   ret
+
 return_statement:
-popl %eax
-movl %ebp, %esp
-popl %ebp
-ret
+   popl %eax
+   movl %ebp, %esp
+   popl %ebp
+   ret
 
 .type strlen, @function
 strlen:
