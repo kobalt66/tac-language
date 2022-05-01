@@ -8,8 +8,11 @@ const char BOOTSTRAP_TEMPLATE[] =
 "print:\n"
 "   pushl %ebp\n"
 "   movl %esp, %ebp\n"
-"   movl 12(%esp), %ecx\n"  // buffer
-"   movl 8(%esp), %edx\n"    // size
+"   pushl 8(%esp)\n"
+"   call strlen\n"
+"   addl $4, %esp\n"
+"   movl 8(%esp), %ecx\n"  // buffer
+"   movl %eax, %edx\n"    // size
 "   movl $4, %eax\n"    // syscall write
 "   movl $1, %ebx\n\n"  // stdout
 "   movl %ebp, %esp\n"
@@ -75,7 +78,7 @@ char* as_f_assignment(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
 
     if (ast->value->type == AST_FUNCTION) {
-        const char* template = ".globl %s\n"
+        const char* template = "\n.globl %s\n"
                                "%s:\n"
                                "pushl %%ebp\n"
                                "movl %%esp, %%ebp\n";
@@ -104,18 +107,22 @@ char* as_f_assignment(AST_T* ast, list_T* list) {
 char* as_f_call(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
 
-    for (unsigned int i = 0; i < ast->value->children->size; i++) {
+    unsigned int i = 0;
+    for (; i < ast->value->children->size; i++) {
         AST_T* arg = ast->value->children->items[i];
         char* arg_s = as_f(arg, list);
         s = realloc(s, (strlen(s) + strlen(arg_s) + 1) * sizeof(char));
         strcat(s, arg_s);
     }
 
+    int addl_size = i * 4;
+
     const char* template = "\n# Call\n"
-                            "call %s\n";
+                           "call %s\n"
+                           "addl $%d, %%esp\n";
 
     char* ret_s = calloc(strlen(template) + 128, sizeof(char));
-    sprintf(ret_s, template, ast->name);
+    sprintf(ret_s, template, ast->name, addl_size);
     s = realloc(s, (strlen(s) + strlen(ret_s) + 1) * sizeof(char));
     strcat(s, ret_s);
     free(ret_s);
@@ -152,7 +159,7 @@ char* as_f_variable(AST_T* ast, list_T* list) {
 
     const char* template = "pushl %d(%%esp)\n";
     s = realloc(s, (strlen(template) + 8) * sizeof(char));
-    sprintf(s, template, var->int_value);
+    sprintf(s, template, 4 + var->int_value);
     
     return s;
 }
@@ -170,7 +177,9 @@ char* as_f_string(AST_T* ast, list_T* list) {
     
     unsigned int nr_bytes = chunks->size * 4;
 
-    char* strpush = calloc(1, sizeof(char));
+    const char* zero_push = "pushl $0x0\n";
+    char* strpush = calloc(strlen(zero_push) + 1, sizeof(char));
+    strcpy(strpush, zero_push);
     const char* pushtemplate = "pushl $0x%s\n";
 
     for (unsigned int i = 0; i < chunks->size; i++) {
@@ -183,18 +192,18 @@ char* as_f_string(AST_T* ast, list_T* list) {
         free(push);
     }
 
-    const char* finalpushstr = "push \%esp\n";
+    const char* finalpushstr = "pushl \%esp\n";
 
     strpush = realloc(strpush, (strlen(strpush) + strlen(finalpushstr) + 1) * sizeof(char));
     strcat(strpush, finalpushstr);
 
     // Pass the size onto the stack
-    const char* pushsize_template = "pushl $%d\n";
+    /*const char* pushsize_template = "pushl $%d\n";
     char* push_size_str = calloc(strlen(pushsize_template) + 128, sizeof(char));
 
     sprintf(push_size_str, pushsize_template, nr_bytes);
     strpush = realloc(strpush, (strlen(strpush) + strlen(finalpushstr) + strlen(pushsize_template + strlen(push_size_str)) + 1) * sizeof(char));
-    strcat(strpush, push_size_str);
+    strcat(strpush, push_size_str);*/
 
     return strpush;
 }

@@ -7,32 +7,52 @@ movl %eax, %ebx
 movl $1, %eax
 int $0x80
 
+
+.globl hello
+hello:
+pushl %ebp
+movl %esp, %ebp
+pushl 8(%esp)
+
+# Call
+call print
+addl $4, %esp
+
+# Return statement
+pushl $0
+jmp return_statement
+
+
 .globl main
 main:
 pushl %ebp
 movl %esp, %ebp
+pushl $0x0
 pushl $0x0a
 pushl $0x021646c72
-pushl $0x06f57206f
-pushl $0x06c6c6548
-push %esp
-pushl $16
+pushl $0x06f77206f
+pushl $0x06c6c6568
+pushl %esp
+pushl $0x0
+pushl $0x0a7920
+pushl $0x0676e6974
+pushl $0x06e697270
+pushl %esp
 
 # Call
-call print
-# Access
-pushl 16(%ebp)
-call strlen
-pushl %eax
-
-# Call
-call print
+call hello
+addl $8, %esp
+pushl $0x0
 pushl $0x0a
-push %esp
-pushl $4
+pushl $0x0216e6961
+pushl $0x06d206d6f
+pushl $0x07266206f
+pushl $0x06c6c6548
+pushl %esp
 
 # Call
 call print
+addl $4, %esp
 
 # Return statement
 pushl $0
@@ -41,8 +61,11 @@ jmp return_statement
 print:
    pushl %ebp
    movl %esp, %ebp
-   movl 12(%esp), %ecx
-   movl 8(%esp), %edx
+   pushl 8(%esp)
+   call strlen
+   addl $4, %esp
+   movl 8(%esp), %ecx
+   movl %eax, %edx
    movl $4, %eax
    movl $1, %ebx
 
