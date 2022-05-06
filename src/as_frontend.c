@@ -108,11 +108,32 @@ char* as_f_call(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
 
     unsigned int i = 0;
+    unsigned int next_push = 0;
+    AST_T* prev_arg = 0;
     for (; i < ast->value->children->size; i++) {
         AST_T* arg = ast->value->children->items[i];
+
+        if (prev_arg) {
+            if (prev_arg->type == AST_STRING) {
+                list_T* chunks = str_to_hex_chunks(arg->string_value);
+                next_push += (chunks->size + 2) * 4;
+            }
+        }
+
         char* arg_s = as_f(arg, list);
         s = realloc(s, (strlen(s) + strlen(arg_s) + 1) * sizeof(char));
         strcat(s, arg_s);
+
+        if (i < ast->value->children->size && prev_arg) {
+            const char* push_tmp = "pushl %d(%%esp)\n";
+            char* push = calloc(strlen(push_tmp) + 128, sizeof(char));
+            sprintf(push, push_tmp, next_push);
+            s = realloc(s, (strlen(s) + strlen(push) + 1) * sizeof(char));
+            strcat(s, push);
+            free(push);
+        }
+
+        prev_arg = arg;
     }
 
     int addl_size = i * 4;
@@ -175,21 +196,37 @@ char* as_f_int(AST_T* ast, list_T* list) {
 char* as_f_string(AST_T* ast, list_T* list) {
     list_T* chunks = str_to_hex_chunks(ast->string_value);
     
-    unsigned int nr_bytes = chunks->size * 4;
+    unsigned int nr_bytes = (chunks->size + 1) * 4;
+    unsigned int bytes_counter = nr_bytes - 4;
 
-    const char* zero_push = "pushl $0x0\n";
-    char* strpush = calloc(strlen(zero_push) + 1, sizeof(char));
-    strcpy(strpush, zero_push);
-    const char* pushtemplate = "pushl $0x%s\n";
+    const char* subl_tmp = "\n# Push string elements onto stack\n"
+                           "subl $%d, %%esp\n";
+    char* sub = calloc(strlen(subl_tmp) + 128, sizeof(char));
+    sprintf(sub, subl_tmp, nr_bytes);
+
+    char* strpush = calloc(strlen(sub) + 1, sizeof(char));
+    strcat(strpush, sub);
+
+    const char* zero_push_tmp = "movl $0x0, %d(%%esp)\n";
+    char* zero_push = calloc(strlen(zero_push_tmp) + 128, sizeof(char));
+    sprintf(zero_push, zero_push_tmp, bytes_counter);
+    strpush = realloc(strpush, (strlen(zero_push) + strlen(strpush) + 1) * sizeof(char));
+    strcat(strpush, zero_push);
+
+    bytes_counter -= 4;
+
+    const char* pushtemplate = "movl $0x%s, %d(%%esp) \n";
 
     for (unsigned int i = 0; i < chunks->size; i++) {
         char* pushhex = (char*)chunks->items[(chunks->size - i) - 1];
         char* push = calloc(strlen(pushhex) + strlen(pushtemplate) + 1, sizeof(char));
-        sprintf(push, pushtemplate, pushhex);
+        sprintf(push, pushtemplate, pushhex, bytes_counter);
         strpush = realloc(strpush, (strlen(strpush) + strlen(push) + 1) * sizeof(char));
         strcat(strpush, push);
         free(pushhex);
         free(push);
+
+        bytes_counter -= 4;
     }
 
     const char* finalpushstr = "pushl \%esp\n";

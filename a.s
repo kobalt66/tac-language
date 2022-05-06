@@ -12,7 +12,12 @@ int $0x80
 hello:
 pushl %ebp
 movl %esp, %ebp
-pushl 8(%esp)
+pushl 16(%esp)
+
+# Call
+call print
+addl $4, %esp
+pushl 12(%esp)
 
 # Call
 call print
@@ -27,27 +32,45 @@ jmp return_statement
 main:
 pushl %ebp
 movl %esp, %ebp
-pushl $0x0
-pushl $0x0a
-pushl $0x021646c72
-pushl $0x06f77206f
-pushl $0x06c6c6568
+
+# Push string elements onto stack
+subl $20, %esp
+movl $0x0, 16(%esp)
+movl $0x0a, 12(%esp) 
+movl $0x021646c72, 8(%esp) 
+movl $0x06f77206f, 4(%esp) 
+movl $0x06c6c6568, 0(%esp) 
 pushl %esp
-pushl $0x0
-pushl $0x0a7920
-pushl $0x0676e6974
-pushl $0x06e697270
+
+# Push string elements onto stack
+subl $16, %esp
+movl $0x0, 12(%esp)
+movl $0x0a7920, 8(%esp) 
+movl $0x0676e6974, 4(%esp) 
+movl $0x06e697270, 0(%esp) 
 pushl %esp
+pushl 20(%esp)
+
+# Push string elements onto stack
+subl $12, %esp
+movl $0x0, 8(%esp)
+movl $0x021677261, 4(%esp) 
+movl $0x020647233, 0(%esp) 
+pushl %esp
+pushl 36(%esp)
 
 # Call
 call hello
-addl $8, %esp
-pushl $0x0
-pushl $0x0a
-pushl $0x0216e6961
-pushl $0x06d206d6f
-pushl $0x07266206f
-pushl $0x06c6c6548
+addl $12, %esp
+
+# Push string elements onto stack
+subl $24, %esp
+movl $0x0, 20(%esp)
+movl $0x0a, 16(%esp) 
+movl $0x0216e6961, 12(%esp) 
+movl $0x06d206d6f, 8(%esp) 
+movl $0x07266206f, 4(%esp) 
+movl $0x06c6c6548, 0(%esp) 
 pushl %esp
 
 # Call
