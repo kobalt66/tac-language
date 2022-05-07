@@ -109,32 +109,49 @@ char* as_f_call(AST_T* ast, list_T* list) {
 
     unsigned int i = 0;
     unsigned int next_push = 0;
-    AST_T* prev_arg = 0;
+    int* int_list = calloc(0, sizeof(int));
+    size_t int_list_size = 0;
+
     for (; i < ast->value->children->size; i++) {
         AST_T* arg = ast->value->children->items[i];
 
-        if (prev_arg) {
-            if (prev_arg->type == AST_STRING) {
-                list_T* chunks = str_to_hex_chunks(arg->string_value);
-                next_push += (chunks->size + 2) * 4;
-            }
+        if (arg->type == AST_STRING) {
+            next_push += 4;
+
+            const char* prefix = "subl $8, %esp\n";
+            s = realloc(s, (strlen(s) + strlen(prefix) + 1) * sizeof(char));
+            strcat(s, prefix);
         }
 
         char* arg_s = as_f(arg, list);
         s = realloc(s, (strlen(s) + strlen(arg_s) + 1) * sizeof(char));
         strcat(s, arg_s);
 
-        if (i < ast->value->children->size && prev_arg) {
-            const char* push_tmp = "pushl %d(%%esp)\n";
-            char* push = calloc(strlen(push_tmp) + 128, sizeof(char));
-            sprintf(push, push_tmp, next_push);
-            s = realloc(s, (strlen(s) + strlen(push) + 1) * sizeof(char));
-            strcat(s, push);
-            free(push);
-        }
+        if (arg->type == AST_STRING) {
+            const char* suffix_tmp = "movl %%esp, -%d(%%ebp)\n"
+                                     "# end of %s\n";
+            char* suffix = calloc(strlen(suffix_tmp) + 128, sizeof(char));
+            sprintf(suffix, suffix_tmp, next_push, arg->string_value);
+            s = realloc(s, (strlen(s) + strlen(suffix) + 1) * sizeof(char)); 
+            strcat(s, suffix);
 
-        prev_arg = arg;
+            int_list_size += 1;
+            int_list = realloc(int_list, int_list_size * sizeof(int));
+            int_list[int_list_size - 1] = next_push;
+        }
     }
+
+    for (unsigned int i = 0; i < int_list_size; i++) {
+        const char* push_tmp = "pushl -%d(%%ebp)\n";
+        char* push = calloc(strlen(push_tmp) * 128, sizeof(char));
+        sprintf(push, push_tmp, int_list[i]);
+        s = realloc(s, (strlen(s) + strlen(push) + 1) * sizeof(char));
+        strcat(s, push);
+        free(push);
+    }
+
+    if (int_list && int_list_size)
+        free(int_list);
 
     int addl_size = i * 4;
 
@@ -202,7 +219,7 @@ char* as_f_string(AST_T* ast, list_T* list) {
     const char* subl_tmp = "\n# Push string elements onto stack\n"
                            "subl $%d, %%esp\n";
     char* sub = calloc(strlen(subl_tmp) + 128, sizeof(char));
-    sprintf(sub, subl_tmp, nr_bytes);
+    sprintf(sub, subl_tmp, nr_bytes + 4);
 
     char* strpush = calloc(strlen(sub) + 1, sizeof(char));
     strcat(strpush, sub);
@@ -229,10 +246,10 @@ char* as_f_string(AST_T* ast, list_T* list) {
         bytes_counter -= 4;
     }
 
-    const char* finalpushstr = "pushl \%esp\n";
+    /*const char* finalpushstr = "pushl \%esp\n";
 
     strpush = realloc(strpush, (strlen(strpush) + strlen(finalpushstr) + 1) * sizeof(char));
-    strcat(strpush, finalpushstr);
+    strcat(strpush, finalpushstr);*/
 
     // Pass the size onto the stack
     /*const char* pushsize_template = "pushl $%d\n";
