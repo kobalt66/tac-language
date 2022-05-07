@@ -13,4 +13,6 @@ list_T* init_list(size_t item_size);
 
 void list_push(list_T* list, void* item);
 
+int list_indexof(list_T* list, void* item);
+
 #endif

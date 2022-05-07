@@ -2,6 +2,7 @@
 #define TAC_AST_H
 
 #include "list.h"
+#include "stack_frame.h"
 
 struct VISITOR_STRUCT;
 
@@ -28,6 +29,7 @@ typedef struct AST_STRUCT {
     int data_type;
     int id;
     struct AST_STRUCT* (*fptr)(struct VISITOR_STRUCT* visitor, struct AST_STRUCT* node, list_T* list);
+    stack_frame_T* stack;
 } AST_T;
 
 AST_T* init_ast(int type);

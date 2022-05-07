@@ -66,15 +66,6 @@ AST_T* parser_parse_id(parser_T* parser) {
     strcpy(value, parser->token->value);
     parser_eat(parser, TOKEN_ID);
 
-    if (parser->token->type == TOKEN_EQUALS) {
-        parser_eat(parser, TOKEN_EQUALS);
-
-        AST_T* ast = init_ast(AST_ASSIGNMENT);
-        ast->name = value;
-        ast->value = parser_parse_expr(parser);
-        return ast;
-    }
-
     AST_T* ast = init_ast(AST_VARIABLE);
     ast->name = value;
 
@@ -105,6 +96,15 @@ AST_T* parser_parse_id(parser_T* parser) {
             parser_eat(parser, TOKEN_INT);
             parser_eat(parser, TOKEN_RBRACKET);
         }
+    }
+
+    if (parser->token->type == TOKEN_EQUALS) {
+        parser_eat(parser, TOKEN_EQUALS);
+        ast->type = AST_ASSIGNMENT;
+        ast->name = value;
+        ast->value = parser_parse_expr(parser);
+        ast->value->name = mkstr(ast->name);
+        return ast;
     }
 
     return ast;

@@ -74,31 +74,61 @@ char* as_f_compound(AST_T* ast, list_T* list) {
     return value;
 }
 
+char* as_f_function(AST_T* ast, list_T* list) {
+    AST_T* parent = list->size ? (AST_T*)list->items[list->size - 1] : (AST_T*)0;
+    if (!parent) return 0;
+
+    list->items[list->size - 1] = 0;
+    list->size -= 1;
+
+    char* name = parent->name;
+
+    const char* template = "\n.globl %s\n"
+                            "%s:\n"
+                            "pushl %%ebp\n"
+                            "movl %%esp, %%ebp\n";
+    char* s = calloc((strlen(template) + (strlen(name) * 2) + 1), sizeof(char));
+    sprintf(s, template, name, name);
+
+    AST_T* as_val = ast;
+
+    for (unsigned int i = 0; i < as_val->children->size; i++) {
+        AST_T* farg = (AST_T*)as_val->children->items[i];
+        AST_T* arg_variable = init_ast(AST_VARIABLE);
+        arg_variable->name = farg->name;
+        arg_variable->int_value = (int) 4 * as_val->children->size - i * 4;
+        list_push(list, arg_variable);
+    }
+
+    char* as_val_val = as_f(as_val->value, list);
+
+    s = realloc(s, (strlen(s) + strlen(as_val_val) + 1) * sizeof(char));
+    strcat(s, as_val_val);
+    free(as_val_val);
+
+    return s;
+}
+
 char* as_f_assignment(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
+    
+    const char* subl_tmp = "subl $4, %esp\n";
+    char* subl = calloc(strlen(subl_tmp) + 1, sizeof(char));
+    strcpy(subl, subl_tmp);
 
-    if (ast->value->type == AST_FUNCTION) {
-        const char* template = "\n.globl %s\n"
-                               "%s:\n"
-                               "pushl %%ebp\n"
-                               "movl %%esp, %%ebp\n";
-        s = realloc(s, (strlen(template) + (strlen(ast->name) * 2) + 1) * sizeof(char));
-        sprintf(s, template, ast->name, ast->name);
+    s = realloc(s, (strlen(s) + strlen(subl) + 1) * sizeof(char));
+    strcat(s, subl);
+    free(subl);
 
-        AST_T* as_val = ast->value;
+    if (ast->value->type == AST_FUNCTION)
+        list_push(list, ast);
 
-        for (unsigned int i = 0; i < as_val->children->size; i++) {
-            AST_T* farg = (AST_T*)as_val->children->items[i];
-            AST_T* arg_variable = init_ast(AST_VARIABLE);
-            arg_variable->name = farg->name;
-            arg_variable->int_value = (int) 4 * as_val->children->size - i * 4;
-            list_push(list, arg_variable);
-        }
+    char* value_as = as_f(ast->value, list);
 
-        char* as_val_val = as_f(as_val->value, list);
-
-        s = realloc(s, (strlen(s) + strlen(as_val_val) + 1) * sizeof(char));
-        strcat(s, as_val_val);
+    if (value_as) {
+        s = realloc(s, (strlen(s) + strlen(value_as) + 1) * sizeof(char));
+        strcat(s, value_as);
+        free(value_as);
     }
 
     return s;
@@ -135,10 +165,9 @@ char* as_f_call(AST_T* ast, list_T* list) {
         strcat(s, arg_s);
 
         if (arg->type == AST_STRING) {
-            const char* suffix_tmp = "movl %%esp, -%d(%%ebp)\n"
-                                     "# end of %s\n";
+            const char* suffix_tmp = "movl %%esp, -%d(%%ebp)\n";
             char* suffix = calloc(strlen(suffix_tmp) + 128, sizeof(char));
-            sprintf(suffix, suffix_tmp, next_push, arg->string_value);
+            sprintf(suffix, suffix_tmp, next_push);
             s = realloc(s, (strlen(s) + strlen(suffix) + 1) * sizeof(char)); 
             strcat(s, suffix);
 
@@ -210,6 +239,12 @@ char* as_f_variable(AST_T* ast, list_T* list) {
         printf("[As Frontend] `%s` is not defined.\n", var->name);
         exit(1);
     }
+
+    int stack_index = list_indexof(var->stack->stack, var);
+
+    if (stack_index == -1) return 0;
+
+    printf("index: %d\n", stack_index);
 
     const char* template = "pushl %d(%%esp)\n";
     s = realloc(s, (strlen(template) + 8) * sizeof(char));
@@ -332,6 +367,7 @@ char* as_f(AST_T* ast, list_T* list) {
         case AST_STRING:            next_value = as_f_string(ast, list); break;
         case AST_ACCESS:            next_value = as_f_access(ast, list); break;
         case AST_STATEMENT_RETURN:  next_value = as_f_statement_return(ast, list); break;
+        case AST_FUNCTION:          next_value = as_f_function(ast, list); break;
         default: { printf("[ASM Frontend]: No frontend for AST of type `%d`\n", ast->type); exit(1); } break;
     }
 
