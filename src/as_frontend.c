@@ -112,15 +112,22 @@ char* as_f_call(AST_T* ast, list_T* list) {
     int* int_list = calloc(0, sizeof(int));
     size_t int_list_size = 0;
 
+    const char* prefix_tmp = "subl $%d, %%esp\n";
+    char* final_prefix = calloc(0, sizeof(char));
+    unsigned int has_final_prefix = 0;
+
     for (; i < ast->value->children->size; i++) {
         AST_T* arg = ast->value->children->items[i];
 
         if (arg->type == AST_STRING) {
             next_push += 4;
 
-            const char* prefix = "subl $8, %esp\n";
-            s = realloc(s, (strlen(s) + strlen(prefix) + 1) * sizeof(char));
-            strcat(s, prefix);
+            char* prefix = calloc(strlen(prefix_tmp) + 128, sizeof(char));
+            sprintf(prefix, prefix_tmp, 4);
+            final_prefix = realloc(final_prefix, (strlen(final_prefix) + strlen(prefix) + 1) * sizeof(char));
+            strcat(final_prefix, prefix);
+            has_final_prefix = 1;
+            free(prefix);
         }
 
         char* arg_s = as_f(arg, list);
@@ -165,7 +172,16 @@ char* as_f_call(AST_T* ast, list_T* list) {
     strcat(s, ret_s);
     free(ret_s);
 
-    return s;
+    char* final_str = calloc(strlen(s) + strlen(final_prefix) + 1, sizeof(char));
+    strcat(final_str, final_prefix);
+    strcat(final_str, s);
+
+    free(s);
+    
+    if (has_final_prefix)
+        free(final_prefix);
+
+    return final_str;
 }
 
 char* as_f_statement_return(AST_T* ast, list_T* list) {
@@ -216,15 +232,15 @@ char* as_f_string(AST_T* ast, list_T* list) {
     unsigned int nr_bytes = (chunks->size + 1) * 4;
     unsigned int bytes_counter = nr_bytes - 4;
 
-    const char* subl_tmp = "\n# Push string elements onto stack\n"
-                           "subl $%d, %%esp\n";
+    const char* subl_tmp = "subl $%d, %%esp\n";
     char* sub = calloc(strlen(subl_tmp) + 128, sizeof(char));
     sprintf(sub, subl_tmp, nr_bytes + 4);
 
     char* strpush = calloc(strlen(sub) + 1, sizeof(char));
     strcat(strpush, sub);
 
-    const char* zero_push_tmp = "movl $0x0, %d(%%esp)\n";
+    const char* zero_push_tmp = "\n# Push string elements onto stack\n"
+                                "movl $0x0, %d(%%esp)\n";
     char* zero_push = calloc(strlen(zero_push_tmp) + 128, sizeof(char));
     sprintf(zero_push, zero_push_tmp, bytes_counter);
     strpush = realloc(strpush, (strlen(zero_push) + strlen(strpush) + 1) * sizeof(char));
