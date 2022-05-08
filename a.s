@@ -14,13 +14,47 @@ main:
 pushl %ebp
 movl %esp, %ebp
 subl $4, %esp
-subl $16, %esp
+subl $56, %esp
 
 # Push string elements onto stack
-movl $0x0, 8(%esp)
-movl $0x0a6f, 4(%esp) 
+movl $0x0, 48(%esp)
+movl $0x0a7473, 44(%esp) 
+movl $0x0616c2065, 40(%esp) 
+movl $0x06874206e, 36(%esp) 
+movl $0x061687420, 32(%esp) 
+movl $0x07265676e, 28(%esp) 
+movl $0x06f6c206e, 24(%esp) 
+movl $0x065766520, 20(%esp) 
+movl $0x073692067, 16(%esp) 
+movl $0x06e697274, 12(%esp) 
+movl $0x073207369, 8(%esp) 
+movl $0x06874206f, 4(%esp) 
 movl $0x06c6c6568, 0(%esp) 
-pushl 8(%esp)
+subl $4, %esp
+subl $56, %esp
+
+# Push string elements onto stack
+movl $0x0, 48(%esp)
+movl $0x0a, 44(%esp) 
+movl $0x027317261, 40(%esp) 
+movl $0x076272065, 36(%esp) 
+movl $0x06c626169, 32(%esp) 
+movl $0x072617620, 28(%esp) 
+movl $0x0666f2065, 24(%esp) 
+movl $0x0756c6176, 20(%esp) 
+movl $0x020676e69, 16(%esp) 
+movl $0x072747320, 12(%esp) 
+movl $0x065687420, 8(%esp) 
+movl $0x074736920, 4(%esp) 
+movl $0x073696874, 0(%esp) 
+movl %esp, -8(%ebp)
+pushl -8(%ebp)
+
+# Call
+call print
+addl $4, %esp
+movl %esp, -12(%ebp)
+pushl -12(%ebp)
 
 # Call
 call print

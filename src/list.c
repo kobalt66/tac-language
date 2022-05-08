@@ -20,9 +20,9 @@ void list_push(list_T* list, void* item) {
     list->items[list->size -1] = item;
 }
 
-int list_indexof(list_T* list, void* item) {
+int list_indexof_str(list_T* list, char* item) {
     for (unsigned int i = 0; i < list->size; i++)
-        if (list->items[i] == item)
-            return i;
+        if (strcmp((char*)list->items[i], item) == 0)
+            return (int)i;
     return -1;
 }

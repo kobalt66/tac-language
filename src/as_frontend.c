@@ -233,22 +233,14 @@ char* as_f_statement_return(AST_T* ast, list_T* list) {
 char* as_f_variable(AST_T* ast, list_T* list) {
     char* s = calloc(1, sizeof(char));
 
-    AST_T* var = var_lookup(list, ast->name);
+    printf("index: %d\n", ast->stack_idx);
 
-    if (!var) {
-        printf("[As Frontend] `%s` is not defined.\n", var->name);
-        exit(1);
-    }
+    const char* template = "movl %%esp, -%d(%%ebp)\n"
+                           "pushl -%d(%%ebp)\n";
 
-    int stack_index = list_indexof(var->stack->stack, var);
-
-    if (stack_index == -1) return 0;
-
-    printf("index: %d\n", stack_index);
-
-    const char* template = "pushl %d(%%esp)\n";
+    int id = 4 + (ast->stack_idx) * 4;
     s = realloc(s, (strlen(template) + 8) * sizeof(char));
-    sprintf(s, template, 4 + var->int_value);
+    sprintf(s, template, id, id);
     
     return s;
 }

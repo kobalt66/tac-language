@@ -161,6 +161,9 @@ AST_T* parser_parse_list(parser_T* parser) {
         parser_eat(parser, TOKEN_ARROW_RIGHT);
         ast->type = AST_FUNCTION;
         ast->value = parser_parse_compound(parser);
+
+        //for (unsigned int i = 0; i < ast->children->size; i++)
+        //    ((AST_T*)ast->children->items[i])->type = AST_ASSIGNMENT;
     }
 
     return ast;
