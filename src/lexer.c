@@ -1,5 +1,6 @@
 #include "include/lexer.h"
 #include "include/macros.h"
+#include "include/utils.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -51,6 +52,7 @@ token_T* lexer_advance_current(lexer_T* lexer, int type) {
 }
 
 token_T* lexer_parse_id(lexer_T* lexer) {
+    int token_type = TOKEN_ID;
     char* value = calloc(1, sizeof(char));
     
     while (isalpha(lexer->c)) {
@@ -59,7 +61,10 @@ token_T* lexer_parse_id(lexer_T* lexer) {
         lexer_advance(lexer);
     }
 
-    return init_token(value, TOKEN_ID);
+    if (strcmp(value, "return") == 0) 
+        token_type = TOKEN_STATEMENT;
+
+    return init_token(value, token_type);
 }
 
 token_T* lexer_parse_number(lexer_T* lexer) {
@@ -87,7 +92,10 @@ token_T* lexer_parse_string(lexer_T* lexer) {
     
     lexer_advance(lexer);
 
-    return init_token(value, TOKEN_STRING);
+    char* formatted = str_format(value);
+    free(value);
+    
+    return init_token(formatted, TOKEN_STRING);
 }
 
 token_T* lexer_next_token(lexer_T* lexer) {

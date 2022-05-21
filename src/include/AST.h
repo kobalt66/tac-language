@@ -2,6 +2,7 @@
 #define TAC_AST_H
 
 #include "list.h"
+#include "stack_frame.h"
 
 struct VISITOR_STRUCT;
 
@@ -15,7 +16,7 @@ typedef struct AST_STRUCT {
         AST_ASSIGNMENT,
         AST_DEFINITION_TYPE,
         AST_VARIABLE,
-        AST_STATEMENT,
+        AST_STATEMENT_RETURN,
         AST_ACCESS,
         AST_NOOP
     } type;
@@ -26,7 +27,10 @@ typedef struct AST_STRUCT {
     struct AST_STRUCT* value;
     int int_value;
     int data_type;
+    int id;
+    unsigned int stack_idx;
     struct AST_STRUCT* (*fptr)(struct VISITOR_STRUCT* visitor, struct AST_STRUCT* node, list_T* list);
+    stack_frame_T* stack;
 } AST_T;
 
 AST_T* init_ast(int type);

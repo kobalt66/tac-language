@@ -27,6 +27,15 @@ AST_T* parser_parse(parser_T* parser) {
     return parser_parse_compound(parser);
 }
 
+AST_T* parser_parse_statement(parser_T* parser) {
+    // we only have return statements right now
+    AST_T* ast = init_ast(AST_STATEMENT_RETURN);
+    parser_eat(parser, TOKEN_STATEMENT);
+    ast->value = parser_parse_expr(parser);
+
+    return ast;
+}
+
 AST_T* parser_parse_compound(parser_T* parser) {
     AST_T* compound = init_ast(AST_COMPOUND);
     
@@ -37,7 +46,10 @@ AST_T* parser_parse_compound(parser_T* parser) {
     }
 
     while (parser->token->type != TOKEN_EOF && parser->token->type != TOKEN_RBRACE) {
-        list_push(compound->children, parser_parse_expr(parser));
+        if (parser->token->type == TOKEN_STATEMENT)
+            list_push(compound->children, parser_parse_statement(parser));
+        else
+            list_push(compound->children, parser_parse_expr(parser));
 
         if (parser->token->type == TOKEN_SEMI)
             parser_eat(parser, TOKEN_SEMI);
@@ -53,15 +65,6 @@ AST_T* parser_parse_id(parser_T* parser) {
     char* value = calloc(strlen(parser->token->value) + 1, sizeof(char));
     strcpy(value, parser->token->value);
     parser_eat(parser, TOKEN_ID);
-
-    if (parser->token->type == TOKEN_EQUALS) {
-        parser_eat(parser, TOKEN_EQUALS);
-
-        AST_T* ast = init_ast(AST_ASSIGNMENT);
-        ast->name = value;
-        ast->value = parser_parse_expr(parser);
-        return ast;
-    }
 
     AST_T* ast = init_ast(AST_VARIABLE);
     ast->name = value;
@@ -87,9 +90,21 @@ AST_T* parser_parse_id(parser_T* parser) {
             ast->value = parser_parse_list(parser);
         }
         else if (parser->token->type == TOKEN_LBRACKET) {
+            parser_eat(parser, TOKEN_LBRACKET);
             ast->type = AST_ACCESS;
-            ast->value = parser_parse_list(parser);
+            ast->int_value = atoi(parser->token->value);
+            parser_eat(parser, TOKEN_INT);
+            parser_eat(parser, TOKEN_RBRACKET);
         }
+    }
+
+    if (parser->token->type == TOKEN_EQUALS) {
+        parser_eat(parser, TOKEN_EQUALS);
+        ast->type = AST_ASSIGNMENT;
+        ast->name = value;
+        ast->value = parser_parse_expr(parser);
+        ast->value->name = mkstr(ast->name);
+        return ast;
     }
 
     return ast;
@@ -115,11 +130,13 @@ AST_T* parser_parse_list(parser_T* parser) {
     
     AST_T* ast = init_ast(AST_COMPOUND);
     
-    list_push(ast->children, parser_parse_expr(parser));
-
-    while (parser->token->type == TOKEN_COMMA) {
-        parser_eat(parser, TOKEN_COMMA);
-        list_push(ast->children, parser_parse_expr(parser)  );
+    if (parser->token->type != (is_bracket ? TOKEN_RBRACKET : TOKEN_RPAREN)) {
+        list_push(ast->children, parser_parse_expr(parser));
+        
+        while (parser->token->type == TOKEN_COMMA) {
+            parser_eat(parser, TOKEN_COMMA);
+            list_push(ast->children, parser_parse_expr(parser));
+        }
     }
 
     parser_eat(parser, is_bracket ? TOKEN_RBRACKET : TOKEN_RPAREN);
@@ -144,6 +161,9 @@ AST_T* parser_parse_list(parser_T* parser) {
         parser_eat(parser, TOKEN_ARROW_RIGHT);
         ast->type = AST_FUNCTION;
         ast->value = parser_parse_compound(parser);
+
+        //for (unsigned int i = 0; i < ast->children->size; i++)
+        //    ((AST_T*)ast->children->items[i])->type = AST_ASSIGNMENT;
     }
 
     return ast;

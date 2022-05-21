@@ -8,5 +8,7 @@ AST_T* init_ast(int type) {
     if (type == AST_COMPOUND)
         ast->children = init_list(sizeof(struct AST_STRUCT*));
 
-    return ast  ;
+    ast->stack = (void*)0;
+
+    return ast;
 }
